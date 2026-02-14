@@ -31,13 +31,24 @@ export function ReportDetail() {
     const [isFollowing, setIsFollowing] = useState(false);
     const [followerCount, setFollowerCount] = useState(0);
 
-    // Check follow status & count
+    const [currentProfile, setCurrentProfile] = useState<any>(null);
+
+    // Check follow status & count & current user profile
     React.useEffect(() => {
         if (id) {
             checkFollowStatus();
             fetchFollowerCount();
+            fetchCurrentProfile();
         }
     }, [id]);
+
+    async function fetchCurrentProfile() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            setCurrentProfile(data);
+        }
+    }
 
     async function checkFollowStatus() {
         try {
@@ -102,12 +113,28 @@ export function ReportDetail() {
         }
     };
 
+    const updateStatus = async (newStatus: string) => {
+        if (!id) return;
+        try {
+            const { error } = await supabase
+                .from('reports')
+                .update({ status: newStatus })
+                .eq('id', id);
+
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['report', id] });
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('Failed to update status');
+        }
+    };
+
     const { data: report, isLoading } = useQuery({
         queryKey: ['report', id],
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('reports')
-                .select('*, profiles(username, avatar_url)')
+                .select('*, profiles(username, avatar_url, is_admin)')
                 .eq('id', id)
                 .single();
             if (error) throw error;
@@ -161,6 +188,9 @@ export function ReportDetail() {
 
     const statusSteps = ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS', 'CLOSED'];
     const currentStatusIndex = statusSteps.indexOf(report.status);
+    const isOwner = currentProfile?.id === report.user_id;
+    const isAdmin = currentProfile?.is_admin;
+    const canEditStatus = isOwner || isAdmin;
 
     return (
         <div className="pb-20 bg-white min-h-screen">
@@ -189,12 +219,27 @@ export function ReportDetail() {
                     <div>
                         <div className="flex justify-between items-start mb-2">
                             <h1 className="text-2xl font-bold text-gray-900">{report.title}</h1>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${report.status === 'OPEN' ? 'bg-red-100 text-red-800' :
-                                report.status === 'CLOSED' ? 'bg-green-100 text-green-800' :
-                                    'bg-blue-100 text-blue-800'
-                                }`}>
-                                {report.status}
-                            </span>
+                            {canEditStatus ? (
+                                <select
+                                    value={report.status}
+                                    onChange={(e) => updateStatus(e.target.value)}
+                                    className={`px-3 py-1 rounded-full text-xs font-bold border-none focus:ring-2 focus:ring-offset-1 cursor-pointer ${report.status === 'OPEN' ? 'bg-red-100 text-red-800 focus:ring-red-500' :
+                                            report.status === 'CLOSED' ? 'bg-green-100 text-green-800 focus:ring-green-500' :
+                                                'bg-blue-100 text-blue-800 focus:ring-blue-500'
+                                        }`}
+                                >
+                                    {statusSteps.map(step => (
+                                        <option key={step} value={step}>{step}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${report.status === 'OPEN' ? 'bg-red-100 text-red-800' :
+                                    report.status === 'CLOSED' ? 'bg-green-100 text-green-800' :
+                                        'bg-blue-100 text-blue-800'
+                                    }`}>
+                                    {report.status}
+                                </span>
+                            )}
                         </div>
                         <p className="text-gray-500 text-sm flex items-center gap-2 mb-4">
                             <Clock size={14} />
@@ -215,8 +260,8 @@ export function ReportDetail() {
                             <button
                                 onClick={toggleFollow}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors ${isFollowing
-                                        ? 'bg-red-50 text-red-600'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-red-50 text-red-600'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 <Heart size={18} fill={isFollowing ? "currentColor" : "none"} />

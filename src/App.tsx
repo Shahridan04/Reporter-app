@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { Layout, Feed, CreateReport, Profile, ReportDetail } from './components';
+import { Layout, Feed, CreateReport, Profile, ReportDetail, AdminDashboard, Notifications } from './components';
 import { Session } from '@supabase/supabase-js';
 
 function App() {
@@ -32,7 +32,9 @@ function App() {
                     <Route index element={<Feed />} />
                     <Route path="create" element={<CreateReport />} />
                     <Route path="profile" element={<Profile />} />
+                    <Route path="notifications" element={<Notifications />} />
                     <Route path="report/:id" element={<ReportDetail />} />
+                    <Route path="admin" element={<AdminDashboard />} />
                 </Route>
             </Routes>
         </BrowserRouter>

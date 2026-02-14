@@ -14,7 +14,7 @@ interface Notification {
     created_at: string;
 }
 
-export function Notifications({ onClose }: { onClose: () => void }) {
+export function Notifications({ onClose }: { onClose?: () => void }) {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -56,7 +56,7 @@ export function Notifications({ onClose }: { onClose: () => void }) {
         <div className="absolute top-14 right-4 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
             <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
                 <h3 className="font-bold text-gray-900">Notifications</h3>
-                <button onClick={onClose} className="text-xs text-blue-600 hover:underline">Close</button>
+                {onClose && <button onClick={onClose} className="text-xs text-blue-600 hover:underline">Close</button>}
             </div>
 
             <div className="max-h-96 overflow-y-auto">

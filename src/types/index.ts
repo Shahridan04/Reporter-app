@@ -3,6 +3,8 @@ export interface Profile {
     username: string;
     avatar_url: string;
     points: number;
+    is_admin?: boolean;
+    is_banned?: boolean;
 }
 
 export interface Badge {
@@ -24,6 +26,7 @@ export interface Report {
     created_at: string;
     user_id: string;
     profiles?: Profile;
+    is_hidden?: boolean;
     likes_count?: number;
     comments_count?: number;
 }
